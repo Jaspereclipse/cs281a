@@ -47,19 +47,86 @@ By implementing IPF algorithm (see *Appendix*) on `hw4data.data`, I got a result
 
 Note that initialization of $\psi_{i,j}(x_i,x_j)$ for any pair clique ${i,j}$ is $\begin{bmatrix} 1&2\\ 3&4 \end{bmatrix}$, since this would affect the final result.
 
-Computation of the log likelihood for each of the model shows that the first one yields the largest value.**WHY?**
+Computation of the log likelihood for each of the model shows that the first one yields the largest value. I think this indicates that the first model best fits the data in the "maximum likelihood" sense.
 
 #3. Max Likelihood Tree
 
-##(a) 
+##(a) Every node in T of degree d appears as the separator set of d - 1 edges in the junction tree for T.
 
-##(b)
+Proof: The statement holds, when there's one node in the tree. Assume that the statement is still true for tree $T$ with $N-1$ nodes. Now consider the case of tree $T$ with $N$ nodes. The newly added node must appear as the leaf in the tree, with 1 degree. The node and its parent have formed a new clique in the junction tree. For this node, the statement is true because it is not a seperator($S = \emptyset, d-1=0$). Now take a look at its parent, which had degree $d_{\pi}$ and appeared as the seperator set of $d_{\pi} - 1$ edges. After attaching the new node, the parent now has degree $d_{\pi} + 1$ and is the seperator set of $d_{\pi}$ edges. Therefore, the statement is proved to be true.
 
-##(c)
+##(b) Maximize the likelihood by choosing potential
 
-##(d)
+Proof: According to Chapter 9, first derivative of the log likelihood for tree $T$ can be expressed as :
 
-##(e) Maximum weight spanning tree
+$$
+\frac{\partial l}{\partial \psi_{i,j}(x_i, x_j)} = N[\frac{\tilde{p}(x_i,x_j)}{\psi_{i,j}(x_i, x_j)} - \frac{p(x_i, x_j)}{\psi_{i,j}(x_i, x_j)}]
+$$
+
+Besides, now that we choose the potential as:
+
+$$
+\begin{aligned}
+\psi_i(x_i) &= \tilde{p}(x_i) \\
+\psi_{i,j}(x_i, x_j) &= \frac{\tilde{p}(x_i,x_j)}{\tilde{p}(x_i) \tilde{p}(x_j)} \\
+Z &= 1
+\end{aligned}
+$$
+
+Joint probability can be transformed accordingly:
+
+$$
+\begin{aligned}
+p(x) &= \frac{1}{Z}\prod_{i \in V}\psi_{i}(x_i)\prod_{\{i,j\}\in E} \psi_{i,j}(x_i, x_j) \\
+&= \frac{\prod_{i \in V}\tilde{p}(x_i)\prod_{\{i,j\}\in E}\tilde{p}(x_i, x_j)}{\prod_{i \in V}\tilde{p}(x_i)^{d_i}} \\
+&= \frac{\prod_{\{i,j\}\in E} \tilde{p}(x_i, x_j)}{\prod_{i \in V}\tilde{p}(x_i)^{d_i -1}}
+\end{aligned}
+$$
+
+Note that the formula above has incorporated the conclusion proved in (a).
+
+Computing marginal $p(x_i,x_j)$ from the joint probability, we have:
+
+$$
+\begin{aligned}
+p(x_i,x_j) &= \sum_{\{i,j\}\notin E}\frac{\prod_{\{i,j\}\in E} \tilde{p}(x_i, x_j)}{\prod_{i \in V}\tilde{p}(x_i)^{d_i -1}} \\
+&=\tilde{p}(x_i, x_j)
+\end{aligned}
+$$ 
+
+Thus, by choosing appropriate $\psi_i(x_i)$ and $\psi_{i,j}(x_i,x_j)$, the likelihood is maximized.
+
+##(c) Marginal entropies
+
+Based on the joint probability derived in (b):
+
+$$
+\begin{aligned}
+l(\theta;\mathcal{D}) &= \sum_{x_{\mathcal{V}}}m(x_{\mathcal{V}})(\sum_{\{i,j\} \in E} \log{\tilde{p}(x_i,x_j)} - \sum_{i \in V}(d_i -1) \log{\tilde{p}(x_i)}) \\
+&= \sum_{\{i,j\} \in E}\sum_{x_{\mathcal{V}}}m(x_{\mathcal{V}})\log{\tilde{p}(x_i,x_j)} -  \sum_{i \in V}\sum_{x_{\mathcal{V}}}m(x_{\mathcal{V}}) \log{\tilde{p}(x_i)} \\
+&= N\sum_{\{i,j\} \in E} \sum_{x_i, x_j}\tilde{p}(x_i,x_j)\log{\tilde{p}(x_i,x_j)} - N\sum_{i \in V}\sum_{x_i}(d_i -1)\tilde{p}(x_i)\log{\tilde{p}(x_i)} \\
+&= -N\sum_{\{i,j\} \in E}H(\tilde{p}_{i,j}) + N\sum_{i \in V}(d_i -1)H(\tilde{p}_i)
+\end{aligned}
+$$
+
+##(d) Maximum weight spanning tree
+
+$$
+I(i,j) = \sum_{x_i,x_j \in \mathcal{X}}\tilde{p}(x_i,x_j)\log{\frac{\tilde{p}(x_i,x_j)}{\tilde{p}(x_i)\tilde{p}(x_j)}}
+$$
+
+Note that log likelihood in (c) can also be written as:
+
+$$
+\begin{aligned}
+l(\theta;\mathcal{D}) &= N(\sum_{i \in V}\sum_{x_i}\tilde{p}(x_i)\log{\tilde{p}(x_i)} + \sum_{\{i,j\} \in E}\sum_{x_i,x_j}\tilde{p}(x_i,x_j)\log{\frac{\tilde{p}(x_i,x_j)}{\tilde{p}(x_i)\tilde{p}(x_j)}})\\
+&= N(\sum_{i \in V}\sum_{x_i}\tilde{p}(x_i)\log{\tilde{p}(x_i)} + \sum_{\{i,j\} \in E}I(i,j))
+\end{aligned}
+$$
+
+When given an observed dataset, maximizing the log likelihood can be done by finding a maximum weight spanning tree with weight defined as $I(i,j)$.
+
+##(e) Maximum weight spanning tree (Implementation)
 
 Implementation of Kruskal's algorithm returns a maximum weight spanning tree, the edges are shown below:
 
